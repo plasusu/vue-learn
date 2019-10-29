@@ -6,6 +6,20 @@
  * 
  * 3.当data中的属性值发生变化时，监听到变化，并且发送给订阅者，更新视图（例子中用console替代视图变化）
  */
+/**
+ * Watcher
+ */
+const targetStack = []
+
+function pushTarget(_target) {
+    if (Dep.target) targetStack.push(_target)
+    Dep.target = _target
+}
+
+function popTarget() {
+    Dep.target = targetStack.pop()
+}
+
 class Watcher {
     constructor(vm, getter) {
         this.vm = vm
@@ -22,16 +36,30 @@ class Watcher {
         this.get()
     }
 }
+/****************分割线***************/
 
-const targetStack = []
-function pushTarget(_target) {
-    if (Dep.target) targetStack.push(_target)
-    Dep.target = _target
+/**
+ * Dep
+ */
+class Dep {
+    constructor() {
+        this.deps = new Set()
+    }
+    depend() {
+        if (Dep.target) {
+            this.deps.add(Dep.target)
+        }
+    }
+    notify() {
+        this.deps.forEach(watcher => watcher.update())
+    }
 }
-function popTarget() {
-    Dep.target = targetStack.pop()
-}
+/****************分割线***************/
 
+
+/**
+ * Vue
+ */
 class Vue {
     constructor(options) {
         this._data = options.data
@@ -46,24 +74,11 @@ class Vue {
     }
 }
 
-class Dep {
-    constructor() {
-        this.deps = new Set()
-    }
-    depend() {
-        if (Dep.target) {
-            this.deps.add(Dep.target)
-        }
-    }
-    notify() {
-        this.deps.forEach(watcher => watcher.update())
-    }
-}
-
 function observe(data) {
     const dep = new Dep()
     Object.keys(data).forEach(key => defineReactive(data, key, data[key], dep))
 }
+
 function defineReactive(obj, key, val, dep) {
     Object.defineProperty(obj, key, {
         configurable: true,
@@ -94,7 +109,12 @@ function proxy(source, target) {
         })
     })
 }
+/****************分割线***************/
 
+
+/**
+ * 执行demo
+ */
 const app = new Vue({
     data: {
         msg: 'Hello, Vue'
